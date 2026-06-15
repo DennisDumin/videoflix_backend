@@ -1,0 +1,13 @@
+django
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+django-rq
+django-redis
+gunicorn
+psycopg2-binary
+whitenoise
+python-dotenv
+django-debug-toolbar
+django-import-export
+pillow
