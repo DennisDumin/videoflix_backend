@@ -12,9 +12,15 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.cookies import delete_token_cookies, set_token_cookies
-from accounts.emails import send_activation_email
+from accounts.emails import send_activation_email, send_password_reset_email
 from accounts.models import User
-from accounts.serializers import LoginSerializer, PublicUserSerializer, RegisterSerializer
+from accounts.serializers import (
+    LoginSerializer,
+    PasswordConfirmSerializer,
+    PasswordResetSerializer,
+    PublicUserSerializer,
+    RegisterSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -84,6 +90,35 @@ class CookieTokenRefreshView(APIView):
         return refresh_access_token(refresh_token)
 
 
+class PasswordResetView(APIView):
+    """Send a password reset email without exposing account existence."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_active_user_by_email(serializer.validated_data["email"])
+        if user:
+            send_password_reset_email(user)
+        return Response({"detail": "An email has been sent to reset your password."})
+
+
+class PasswordConfirmView(APIView):
+    """Set a new password when uid and token are valid."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        user = get_user_from_uid(uidb64)
+        if not is_user_token_valid(user, token):
+            return Response({"detail": "Invalid reset link."}, status=400)
+        serializer = PasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        set_new_password(user, serializer.validated_data["new_password"])
+        return Response({"detail": "Your Password has been successfully reset."})
+
+
 def build_register_response(user, token):
     """Build successful registration response data."""
     return {
@@ -103,6 +138,11 @@ def get_user_from_uid(uidb64):
 
 def is_activation_valid(user, token):
     """Return whether an activation token is valid."""
+    return is_user_token_valid(user, token)
+
+
+def is_user_token_valid(user, token):
+    """Return whether a default Django user token is valid."""
     return user is not None and default_token_generator.check_token(user, token)
 
 
@@ -145,3 +185,14 @@ def refresh_access_token(refresh_token):
     response = Response({"detail": "Token refreshed", "access": str(refresh.access_token)})
     set_token_cookies(response, refresh.access_token)
     return response
+
+
+def get_active_user_by_email(email):
+    """Return the active user for an email address if one exists."""
+    return User.objects.filter(email__iexact=email, is_active=True).first()
+
+
+def set_new_password(user, password):
+    """Persist a new user password."""
+    user.set_password(password)
+    user.save(update_fields=["password"])

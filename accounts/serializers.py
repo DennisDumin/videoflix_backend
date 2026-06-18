@@ -58,9 +58,37 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
+class PasswordResetSerializer(serializers.Serializer):
+    """Validate password reset request payloads."""
+
+    email = serializers.EmailField()
+
+
+class PasswordConfirmSerializer(serializers.Serializer):
+    """Validate new password payloads."""
+
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        """Validate matching and secure new passwords."""
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("Invalid password reset data.")
+        validate_reset_password(attrs["new_password"])
+        return attrs
+
+
 def validate_registration_password(password):
     """Validate a password without leaking exact policy details."""
     try:
         validate_password(password)
     except DjangoValidationError as exc:
         raise serializers.ValidationError("Invalid registration data.") from exc
+
+
+def validate_reset_password(password):
+    """Validate reset passwords with a generic API error."""
+    try:
+        validate_password(password)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError("Invalid password reset data.") from exc
