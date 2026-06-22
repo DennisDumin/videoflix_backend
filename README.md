@@ -461,6 +461,15 @@ If ffmpeg fails, the status becomes:
 failed
 ```
 
+Existing videos can be processed again from the Django admin:
+
+1. Open the video list in `/admin/`.
+2. Select one or more videos.
+3. Choose the `Reprocess selected videos` action.
+4. Confirm the action.
+
+The selected videos are reset to `pending`, their HLS paths are cleared, and new RQ jobs are queued.
+
 The backend creates:
 
 - 480p HLS playlist and segments
