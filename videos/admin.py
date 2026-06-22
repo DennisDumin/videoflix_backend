@@ -29,4 +29,11 @@ class VideoAdmin(ImportExportModelAdmin):
     list_display = ("id", "title", "category", "processing_status", "created_at")
     list_filter = ("category", "processing_status", "created_at")
     search_fields = ("title", "description", "category")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = (
+        "processing_status",
+        "hls_480p_path",
+        "hls_720p_path",
+        "hls_1080p_path",
+        "created_at",
+        "updated_at",
+    )

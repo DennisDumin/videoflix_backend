@@ -376,7 +376,7 @@ Success: `200 OK`
 GET /api/video/
 ```
 
-Requires auth.
+Requires auth. Only videos with `processing_status=ready` are returned, because the frontend can only play videos after HLS conversion has finished.
 
 Success: `200 OK`
 

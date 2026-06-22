@@ -14,8 +14,10 @@ class VideoListView(ListAPIView):
     serializer_class = VideoListSerializer
 
     def get_queryset(self):
-        """Return videos newest first."""
-        return Video.objects.order_by("-created_at")
+        """Return processed videos newest first."""
+        return Video.objects.filter(
+            processing_status=Video.ProcessingStatus.READY,
+        ).order_by("-created_at")
 
 
 class HLSManifestView(APIView):

@@ -13,7 +13,6 @@ def enqueue_video_processing(sender, instance, created, **kwargs):
     """Enqueue processing after a video was created."""
     if not created:
         return
-    print("New object created")
     transaction.on_commit(lambda: enqueue_process_video(instance.id))
 
 
