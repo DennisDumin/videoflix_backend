@@ -19,6 +19,7 @@ class VideoResource(resources.ModelResource):
             "description",
             "category",
             "processing_status",
+            "processing_error",
             "created_at",
         )
 
@@ -37,6 +38,7 @@ class VideoAdmin(ImportExportModelAdmin):
         "hls_480p_path",
         "hls_720p_path",
         "hls_1080p_path",
+        "processing_error",
         "created_at",
         "updated_at",
     )
@@ -62,5 +64,6 @@ def reset_videos_for_processing(queryset):
         hls_480p_path="",
         hls_720p_path="",
         hls_1080p_path="",
+        processing_error="",
         updated_at=timezone.now(),
     )

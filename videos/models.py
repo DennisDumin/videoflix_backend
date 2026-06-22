@@ -34,6 +34,7 @@ class Video(models.Model):
     hls_480p_path = models.CharField(blank=True, max_length=500)
     hls_720p_path = models.CharField(blank=True, max_length=500)
     hls_1080p_path = models.CharField(blank=True, max_length=500)
+    processing_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

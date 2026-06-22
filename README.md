@@ -461,6 +461,8 @@ If ffmpeg fails, the status becomes:
 failed
 ```
 
+The error message is saved in `processing_error` and can be inspected in the Django admin.
+
 Existing videos can be processed again from the Django admin:
 
 1. Open the video list in `/admin/`.
@@ -468,7 +470,7 @@ Existing videos can be processed again from the Django admin:
 3. Choose the `Reprocess selected videos` action.
 4. Confirm the action.
 
-The selected videos are reset to `pending`, their HLS paths are cleared, and new RQ jobs are queued.
+The selected videos are reset to `pending`, their HLS paths and previous error message are cleared, and new RQ jobs are queued.
 
 The backend creates:
 
@@ -599,6 +601,7 @@ No automated Django `tests.py` files are required for this project. The endpoint
 5. Upload an invalid video file in admin.
    - Expected: background job fails.
    - Expected admin status: `failed`
+   - Expected admin error field: `processing_error` contains the processing error.
 
 ## Useful Commands
 

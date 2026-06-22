@@ -12,8 +12,8 @@ def process_video(video_id):
     try:
         result = process_video_files(video)
         mark_video_as_ready(video, result)
-    except Exception:
-        mark_video_as_failed(video)
+    except Exception as exc:
+        mark_video_as_failed(video, exc)
         raise
 
 
@@ -25,7 +25,8 @@ def get_video(video_id):
 def mark_video_as_processing(video):
     """Persist the processing status."""
     video.processing_status = Video.ProcessingStatus.PROCESSING
-    video.save(update_fields=["processing_status", "updated_at"])
+    video.processing_error = ""
+    video.save(update_fields=["processing_status", "processing_error", "updated_at"])
 
 
 def mark_video_as_ready(video, result):
@@ -34,6 +35,7 @@ def mark_video_as_ready(video, result):
     video.hls_720p_path = result["hls_720p_path"]
     video.hls_1080p_path = result["hls_1080p_path"]
     video.processing_status = Video.ProcessingStatus.READY
+    video.processing_error = ""
     update_fields = get_ready_update_fields(video, result)
     video.save(update_fields=update_fields)
 
@@ -42,7 +44,7 @@ def get_ready_update_fields(video, result):
     """Return fields to update after successful processing."""
     update_fields = [
         "hls_480p_path", "hls_720p_path", "hls_1080p_path",
-        "processing_status", "updated_at",
+        "processing_status", "processing_error", "updated_at",
     ]
     if result["thumbnail_path"]:
         video.thumbnail.name = result["thumbnail_path"]
@@ -50,7 +52,14 @@ def get_ready_update_fields(video, result):
     return update_fields
 
 
-def mark_video_as_failed(video):
+def mark_video_as_failed(video, error):
     """Persist a failed processing status."""
     video.processing_status = Video.ProcessingStatus.FAILED
-    video.save(update_fields=["processing_status", "updated_at"])
+    video.processing_error = get_error_message(error)
+    video.save(update_fields=["processing_status", "processing_error", "updated_at"])
+
+
+def get_error_message(error):
+    """Return a useful processing error message."""
+    message = str(error).strip()
+    return message or error.__class__.__name__
