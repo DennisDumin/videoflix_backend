@@ -5,10 +5,11 @@ from django.middleware.csrf import get_token
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.cookies import delete_token_cookies, set_token_cookies
@@ -66,14 +67,13 @@ class LoginView(APIView):
 class LogoutView(APIView):
     """Blacklist refresh token and delete JWT cookies."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         response = Response(build_logout_response())
         refresh_token = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
-        if not refresh_token:
-            return Response({"detail": "Refresh token is required."}, status=400)
-        blacklist_refresh_token(refresh_token)
+        if refresh_token:
+            blacklist_refresh_token(refresh_token)
         delete_token_cookies(response)
         return response
 
@@ -163,9 +163,7 @@ def set_login_cookies(response, user, request):
 
 def build_logout_response():
     """Build successful logout response data."""
-    return {
-        "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
-    }
+    return {"detail": "Logout successful! All tokens will be deleted."}
 
 
 def blacklist_refresh_token(refresh_token):
@@ -179,12 +177,19 @@ def blacklist_refresh_token(refresh_token):
 def refresh_access_token(refresh_token):
     """Refresh the access token and set a new access cookie."""
     try:
-        refresh = RefreshToken(refresh_token)
-    except TokenError:
+        token_data = validate_refresh_token(refresh_token)
+    except (InvalidToken, TokenError):
         return Response({"detail": "Invalid refresh token."}, status=401)
-    response = Response({"detail": "Token refreshed", "access": str(refresh.access_token)})
-    set_token_cookies(response, refresh.access_token)
+    response = Response({"detail": "Token refreshed", "access": token_data["access"]})
+    set_token_cookies(response, token_data["access"], token_data.get("refresh"))
     return response
+
+
+def validate_refresh_token(refresh_token):
+    """Validate refresh token input and apply Simple JWT rotation settings."""
+    serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data
 
 
 def get_active_user_by_email(email):

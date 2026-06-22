@@ -303,23 +303,25 @@ Success: `200 OK`
 }
 ```
 
+The response sets a new `access_token` cookie. When refresh token rotation is enabled, it also sets a new `refresh_token` cookie and blacklists the old refresh token.
+
 ### Logout
 
 ```http
 POST /api/logout/
 ```
 
-Requires valid auth and the `refresh_token` cookie.
+Logs the user out by deleting the JWT cookies. If a refresh token is available, it is blacklisted.
 
 Success: `200 OK`
 
 ```json
 {
-  "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
+  "detail": "Logout successful! All tokens will be deleted."
 }
 ```
 
-The response deletes both JWT cookies and blacklists the refresh token.
+The response deletes both JWT cookies. This endpoint also works when the access token is already expired, so the frontend can always clear the browser session.
 
 ### Password Reset
 
@@ -509,6 +511,7 @@ No automated Django `tests.py` files are required for this project. The endpoint
 6. `POST /api/token/refresh/` with the refresh cookie.
    - Expected: `200 OK`
    - Expected new `access_token` cookie.
+   - Expected new `refresh_token` cookie when refresh rotation is enabled.
 7. `POST /api/logout/` with both cookies.
    - Expected: `200 OK`
    - Expected cookies are deleted.
@@ -528,6 +531,9 @@ No automated Django `tests.py` files are required for this project. The endpoint
 6. `POST /api/token/refresh/` without refresh cookie.
    - Expected: `401 Unauthorized`
 7. `POST /api/logout/` without access cookie.
+   - Expected: `200 OK`
+   - Expected cookies are deleted when present.
+8. `POST /api/token/refresh/` with an invalid or blacklisted refresh cookie.
    - Expected: `401 Unauthorized`
 
 ### Password Reset Happy Path
