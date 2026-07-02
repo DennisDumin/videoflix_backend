@@ -132,6 +132,22 @@ Important `.env` values:
 Local emails are printed to the backend logs when
 `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`.
 
+To send real emails through SMTP, update `.env`:
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_HOST_USER=your_smtp_user
+EMAIL_HOST_PASSWORD=your_smtp_password
+DEFAULT_FROM_EMAIL=Videoflix <noreply@example.com>
+```
+
+Activation and password reset emails use responsive HTML templates in
+`accounts/templates/accounts/emails/`.
+
 ## Authentication
 
 Authentication uses JWT tokens stored in HTTP-only cookies:
